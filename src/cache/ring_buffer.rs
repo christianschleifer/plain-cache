@@ -6,10 +6,12 @@ pub(crate) struct RingBuffer<T> {
 
 impl<T> RingBuffer<T> {
     pub(crate) fn with_capacity(capacity: usize) -> RingBuffer<T> {
+        let mut buffer = Vec::with_capacity(capacity);
+        buffer.resize_with(capacity, || None);
         RingBuffer {
             head: 0,
             len: 0,
-            buffer: Vec::with_capacity(capacity),
+            buffer,
         }
     }
 
@@ -29,22 +31,6 @@ impl<T> RingBuffer<T> {
         if self.is_full() {
             return None;
         }
-
-        // buffer.cap   - - - - -
-        // buffer.len   - - -
-        // len            - -
-        // head           |
-        //             [N S S _ _ ]
-        if self.buffer.len() < self.buffer.capacity() {
-            self.len += 1;
-            self.buffer.push(Some(value));
-            // buffer.cap   - - - - -
-            // buffer.len   - - - -
-            // len            - - -
-            // head           |
-            //             [N S S S _ ]
-            return Some(self.buffer.len() - 1);
-        };
 
         // buffer.cap   - - - - -
         // buffer.len   - - - - -
@@ -80,16 +66,11 @@ impl<T> RingBuffer<T> {
         }
     }
 
+    #[inline(always)]
     fn wrap_add(&self, idx: usize, addend: usize) -> usize {
-        self.wrap_index(idx.wrapping_add(addend), self.buffer.capacity())
-    }
-
-    fn wrap_index(&self, logical_index: usize, capacity: usize) -> usize {
-        if logical_index >= capacity {
-            logical_index - capacity
-        } else {
-            logical_index
-        }
+        let capacity = self.buffer.capacity();
+        let idx = idx.wrapping_add(addend);
+        if idx >= capacity { idx - capacity } else { idx }
     }
 }
 
@@ -149,40 +130,6 @@ mod tests {
 
         // then
         assert!(!is_full)
-    }
-
-    #[test]
-    fn it_pushes_back_by_pushing_to_buffer() {
-        // given
-        let mut ring_buffer = RingBuffer::with_capacity(5);
-        ring_buffer.push_back(String::from("first")).unwrap();
-        ring_buffer.push_back(String::from("second")).unwrap();
-        ring_buffer.push_back(String::from("third")).unwrap();
-        ring_buffer.pop_front();
-
-        // buffer.cap   - - - - -
-        // buffer.len   - - -
-        // len            - -
-        // head           |
-        //             [N S S _ _ ]
-        assert_eq!(ring_buffer.head, 1);
-        assert_eq!(ring_buffer.buffer.len(), 3);
-        assert_eq!(ring_buffer.len, 2);
-
-        // when
-        let idx = ring_buffer.push_back(String::from("fourth")).unwrap();
-
-        // then
-
-        // buffer.cap   - - - - -
-        // buffer.len   - - - -
-        // len            - - -
-        // head           |
-        //             [N S S S _ ]
-        assert_eq!(idx, 3);
-        assert_eq!(ring_buffer.head, 1);
-        assert_eq!(ring_buffer.buffer.len(), 4);
-        assert_eq!(ring_buffer.len, 3);
     }
 
     #[test]
