@@ -14,10 +14,7 @@ where
 {
     pub(crate) fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
         let mut buckets = Vec::with_capacity(capacity);
-
-        for _ in 0..capacity {
-            buckets.push(None);
-        }
+        buckets.resize_with(capacity, || None);
 
         Self {
             hash_builder,
