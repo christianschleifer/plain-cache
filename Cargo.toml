@@ -1,6 +1,6 @@
 [package]
 name = "plain-cache"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Christian Schleifer <chr.schleifer@gmail.com>"]
 description = "High-performance thread-safe cache with a focus on simplicity"
