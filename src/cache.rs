@@ -12,6 +12,15 @@ mod shard;
 
 pub(crate) type RandomState = ahash::RandomState;
 
+/// Highly performant, thread-safe cache with a focus on simplicity.
+///
+/// It implements the S3-FIFO eviction algorithm as specified in
+/// [FIFO Queues are All You Need for Cache Eviction](https://dl.acm.org/doi/pdf/10.1145/3600006.3613147).
+/// The cache is divided into multiple shards to reduce contention during concurrent access. This
+/// crate does not use any unsafe code.
+///
+/// Wrap the cache in a [`std::sync::Arc`] to share it between threads. Both reads and writes only
+/// require shared references to the cache.
 pub struct Cache<K, V, S = RandomState> {
     hash_builder: S,
     shards: Vec<RwLock<Shard<K, V, S>>>,
@@ -23,10 +32,18 @@ where
     V: Clone,
     S: BuildHasher,
 {
+    /// Creates a new cache with at least the specified capacity.
+    ///
+    /// The actual capacity may be slightly higher due to sharding and rounding.
     pub fn with_capacity(capacity: usize) -> Cache<K, V> {
         Cache::with_capacity_and_hasher(capacity, RandomState::new())
     }
 
+    /// Inserts a key-value pair into the cache.
+    ///
+    /// If the cache did not have this key present, [`None`] is returned.
+    ///
+    /// If the cache did have this key present, the value is updated, and the old value is returned.
     pub fn insert(&self, key: K, value: V) -> Option<V> {
         let hash = self.hash_builder.hash_one(&key);
         let shard_lock = self.get_shard(hash);
@@ -35,6 +52,10 @@ where
         shard.insert(key, value)
     }
 
+    /// Returns the value corresponding to the key.
+    ///
+    /// This method clones the value when returning the item. Consider wrapping your values in
+    /// [`std::sync::Arc`] if cloning is too expensive for you use-case.
     pub fn get<Q>(&self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -61,6 +82,10 @@ where
     V: Clone,
     S: Clone + BuildHasher,
 {
+    /// Creates a new cache with the at least the specified capacity, using `hasher` to hash the
+    /// keys.
+    ///
+    /// The actual capacity may be slightly higher due to sharding and rounding.
     pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Cache<K, V, S> {
         let number_of_shards = cmp::min(
             thread::available_parallelism()
