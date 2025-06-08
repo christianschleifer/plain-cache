@@ -1,5 +1,5 @@
 [package]
-name = "cache"
+name = "plain-cache"
 version = "0.1.0"
 edition = "2024"
 authors = ["Christian Schleifer <chr.schleifer@gmail.com>"]
