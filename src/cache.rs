@@ -26,19 +26,25 @@ pub struct Cache<K, V, S = RandomState> {
     shards: Vec<RwLock<Shard<K, V, S>>>,
 }
 
+impl<K, V> Cache<K, V, RandomState>
+where
+    K: Clone + Eq + Hash,
+    V: Clone,
+{
+    /// Creates a new cache with at least the specified capacity.
+    ///
+    /// The actual capacity may be slightly higher due to sharding and rounding.
+    pub fn with_capacity(capacity: usize) -> Cache<K, V, RandomState> {
+        Cache::with_capacity_and_hasher(capacity, Default::default())
+    }
+}
+
 impl<K, V, S> Cache<K, V, S>
 where
     K: Clone + Eq + Hash,
     V: Clone,
     S: BuildHasher,
 {
-    /// Creates a new cache with at least the specified capacity.
-    ///
-    /// The actual capacity may be slightly higher due to sharding and rounding.
-    pub fn with_capacity(capacity: usize) -> Cache<K, V> {
-        Cache::with_capacity_and_hasher(capacity, RandomState::new())
-    }
-
     /// Inserts a key-value pair into the cache.
     ///
     /// If the cache did not have this key present, [`None`] is returned.
