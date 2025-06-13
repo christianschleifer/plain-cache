@@ -27,6 +27,7 @@ impl<T> RingBuffer<T> {
         self.buffer.get(index).and_then(Option::as_ref)
     }
 
+    /// Adds an item to the back of the queue.
     pub(crate) fn push_back(&mut self, value: T) -> Option<usize> {
         if self.is_full() {
             return None;
@@ -48,6 +49,9 @@ impl<T> RingBuffer<T> {
         Some(physical_idx)
     }
 
+    /// Pops an element from the front of the queue and returns it.
+    ///
+    /// If the queue is empty, [None] is returned.
     pub(crate) fn pop_front(&mut self) -> Option<T> {
         if self.is_empty() {
             None
@@ -74,11 +78,15 @@ impl<T> RingBuffer<T> {
         }
     }
 
+    /// Removes an element from the queue. Note that this will not immediately increase the len of
+    /// the queue. Only calling using [RingBuffer::pop_front] will do this.
+    ///
+    /// ## Panics
+    /// This method doesn't do an index check. Out of bound accesses will panic.
     pub(crate) fn remove(&mut self, index: usize) -> Option<T> {
         self.buffer[index].take()
     }
 
-    #[inline(always)]
     fn wrap_add(&self, idx: usize, addend: usize) -> usize {
         let capacity = self.buffer.capacity();
         let idx = idx.wrapping_add(addend);
