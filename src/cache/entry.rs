@@ -6,8 +6,8 @@ pub(crate) enum EntryPointer {
 }
 
 pub(crate) struct Entry<K, V> {
-    key: K,
-    value: V,
+    pub(crate) key: K,
+    pub(crate) value: V,
     num_accessed: AtomicU8,
 }
 
@@ -20,18 +20,6 @@ impl<K, V> Entry<K, V> {
             value,
             num_accessed: AtomicU8::new(0),
         }
-    }
-
-    pub fn into_key(self) -> K {
-        self.key
-    }
-
-    pub fn key(&self) -> &K {
-        &self.key
-    }
-
-    pub fn value(&self) -> &V {
-        &self.value
     }
 
     pub(crate) fn set_num_accessed(&self, val: u8) {

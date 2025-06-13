@@ -56,13 +56,29 @@ impl<T> RingBuffer<T> {
             // buffer.len   - - - - -
             // len          -     - -
             // head               |
-            //             [N N N S S ]
-            let t = self.buffer[self.head]
-                .take()
-                .expect("deletions not supported");
-            self.head = self.wrap_add(self.head, 1);
-            self.len -= 1;
-            Some(t)
+            //             [S N N S S ]
+            while self.len >= 1 {
+                let t = self.buffer[self.head].take();
+
+                self.head = self.wrap_add(self.head, 1);
+                self.len -= 1;
+
+                match t {
+                    None => continue,
+                    item @ Some(_) => {
+                        return item;
+                    }
+                }
+            }
+            None
+        }
+    }
+
+    pub(crate) fn remove(&mut self, index: usize) -> Option<T> {
+        if self.is_empty() {
+            None
+        } else {
+            self.buffer[index].take()
         }
     }
 
@@ -225,5 +241,45 @@ mod tests {
 
         // then
         assert!(option.is_none());
+    }
+
+    #[test]
+    fn it_handles_deletions() {
+        // given
+        let mut ring_buffer = RingBuffer::with_capacity(5);
+        ring_buffer.push_back(String::from("first")).unwrap();
+        ring_buffer.push_back(String::from("second")).unwrap();
+        ring_buffer.push_back(String::from("third")).unwrap();
+        ring_buffer.push_back(String::from("fourth")).unwrap();
+        ring_buffer.push_back(String::from("fifth")).unwrap();
+        ring_buffer.pop_front();
+        ring_buffer.pop_front();
+        ring_buffer.pop_front();
+
+        ring_buffer.remove(3);
+        // buffer.cap   - - - - -
+        // buffer.len   - - - - -
+        // len                - -
+        // head               |
+        //             [N N N N S ]
+        assert_eq!(ring_buffer.head, 3);
+        assert_eq!(ring_buffer.buffer.len(), 5);
+        assert_eq!(ring_buffer.len, 2);
+
+        // when
+        let item = ring_buffer.pop_front().unwrap();
+
+        // then
+
+        // buffer.cap   - - - - -
+        // buffer.len   - - - - -
+        // len
+        // head         |
+        //             [N N N N N ]
+        assert!(ring_buffer.is_empty());
+        assert_eq!(ring_buffer.head, 0);
+        assert_eq!(ring_buffer.buffer.len(), 5);
+        assert_eq!(ring_buffer.len, 0);
+        assert_eq!(item, "fifth")
     }
 }

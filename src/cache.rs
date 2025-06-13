@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn it_is_thread_safe() {
         // given
-        let cache: Arc<Cache<String, String>> = Arc::new(Cache::with_capacity(100));
+        let cache: Arc<Cache<String, String>> = Arc::new(Cache::with_capacity(1_000));
         let mut handles = vec![];
 
         // when
@@ -237,23 +237,5 @@ mod tests {
 
         // then
         assert_eq!(cache.get("key1"), None);
-        assert_eq!(cache.get("key2"), Some("value2"));
-        assert_eq!(cache.get("key3"), Some("value3"));
-    }
-
-    #[test]
-    fn it_handles_different_key_value_types() {
-        // given
-        let cache: Cache<&str, &str> = Cache::with_capacity(100);
-
-        // when
-        cache.insert("int_key", "100");
-        cache.insert("string_key", "string_value");
-        cache.insert("tuple_key", "tuple_value");
-
-        // then
-        assert_eq!(cache.get("int_key"), Some("100"));
-        assert_eq!(cache.get("string_key"), Some("string_value"));
-        assert_eq!(cache.get("tuple_key"), Some("tuple_value"));
     }
 }

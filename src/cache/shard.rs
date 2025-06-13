@@ -44,27 +44,28 @@ where
     V: Clone,
 {
     pub(crate) fn insert(&mut self, key: K, value: V) -> Option<V> {
-        if self.entry_pointers.contains_key(&key) {
-            // todo: Delete the existing entry in the fifo queues
-            return match self.entry_pointers.get(&key)? {
-                EntryPointer::MainQueue(index) => self
-                    .main_queue
-                    .get(*index)
-                    .map(|entry| entry.value().clone()),
-                EntryPointer::SmallQueue(index) => self
-                    .small_queue
-                    .get(*index)
-                    .map(|entry| entry.value().clone()),
-            };
-        }
+        let previous_item = if self.entry_pointers.contains_key(&key) {
+            match self.entry_pointers.get(&key).expect("just checked") {
+                EntryPointer::MainQueue(index) => {
+                    self.main_queue.remove(*index).map(|entry| entry.value)
+                }
+                EntryPointer::SmallQueue(index) => {
+                    self.small_queue.remove(*index).map(|entry| entry.value)
+                }
+            }
+        } else {
+            None
+        };
 
         let entry = Entry::new(key.clone(), value);
 
         if self.ghost_queue.contains(&key) {
-            return self.insert_into_main_queue(entry);
+            self.insert_into_main_queue(entry);
+        } else {
+            self.insert_into_small_queue(entry);
         }
 
-        self.insert_into_small_queue(entry)
+        previous_item
     }
 
     fn insert_into_main_queue(&mut self, entry: Entry<K, V>) -> Option<V> {
@@ -72,7 +73,7 @@ where
             self.evict_main_queue();
         }
 
-        let key = entry.key().clone();
+        let key = entry.key.clone();
 
         let index = self
             .main_queue
@@ -94,7 +95,7 @@ where
                     self.reinsert_into_main_queue(entry, decremented_by_one);
                     continue;
                 } else {
-                    self.entry_pointers.remove(entry.key());
+                    self.entry_pointers.remove(&entry.key);
                     return;
                 }
             }
@@ -108,7 +109,7 @@ where
             self.evict_small_queue();
         }
 
-        let key = entry.key().clone();
+        let key = entry.key.clone();
 
         let index = self
             .small_queue
@@ -130,7 +131,7 @@ where
                     self.evict_main_queue();
                 }
 
-                let pointer = self.entry_pointers.get_mut(entry.key()).expect(
+                let pointer = self.entry_pointers.get_mut(&entry.key).expect(
                     "an entry popped from the small queue must be present in the entry pointers",
                 );
 
@@ -145,8 +146,8 @@ where
             } else {
                 // remove the entry and add the key to the ghost queue
 
-                self.entry_pointers.remove(entry.key());
-                self.ghost_queue.insert(entry.into_key());
+                self.entry_pointers.remove(&entry.key);
+                self.ghost_queue.insert(entry.key);
             };
         }
     }
@@ -154,7 +155,7 @@ where
     fn reinsert_into_main_queue(&mut self, entry: Entry<K, V>, num_accessed: u8) {
         let pointer = self
             .entry_pointers
-            .get_mut(entry.key())
+            .get_mut(&entry.key)
             .expect("an entry popped from the main queue must be present in the entry pointers");
 
         entry.set_num_accessed(num_accessed);
@@ -179,7 +180,7 @@ where
                     .get(*index)
                     .expect("an entry must exist for an entry pointer");
                 Self::update_access_count(entry);
-                Some(entry.value().clone())
+                Some(entry.value.clone())
             }
             EntryPointer::SmallQueue(index) => {
                 let entry = self
@@ -187,7 +188,7 @@ where
                     .get(*index)
                     .expect("an entry must exist for an entry pointer");
                 Self::update_access_count(entry);
-                Some(entry.value().clone())
+                Some(entry.value.clone())
             }
         }
     }
