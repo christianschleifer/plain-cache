@@ -19,9 +19,8 @@ where
     S: BuildHasher + Clone,
 {
     pub(crate) fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
-        // todo
-        let small_fifo_queue_size = capacity / 10;
-        let main_fifo_queue_size = capacity - small_fifo_queue_size;
+        let small_fifo_queue_size = cmp::max(capacity / 10, 1);
+        let main_fifo_queue_size = cmp::max(capacity - small_fifo_queue_size, 1);
 
         Self {
             entry_pointers: HashMap::<K, EntryPointer, S>::with_capacity_and_hasher(
