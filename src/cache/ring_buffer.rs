@@ -75,11 +75,7 @@ impl<T> RingBuffer<T> {
     }
 
     pub(crate) fn remove(&mut self, index: usize) -> Option<T> {
-        if self.is_empty() {
-            None
-        } else {
-            self.buffer[index].take()
-        }
+        self.buffer[index].take()
     }
 
     #[inline(always)]
