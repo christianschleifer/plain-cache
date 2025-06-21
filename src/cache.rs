@@ -21,6 +21,7 @@ pub(crate) type RandomState = ahash::RandomState;
 ///
 /// Wrap the cache in a [`std::sync::Arc`] to share it between threads. Both reads and writes only
 /// require shared references to the cache.
+#[derive(Debug)]
 pub struct Cache<K, V, S = RandomState> {
     hash_builder: S,
     shards: Vec<RwLock<Shard<K, V, S>>>,

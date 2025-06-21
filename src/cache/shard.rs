@@ -7,6 +7,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash};
 
+#[derive(Debug)]
 pub(crate) struct Shard<K, V, S = RandomState> {
     entry_pointers: HashMap<K, EntryPointer, S>,
     small_queue: RingBuffer<Entry<K, V>>,

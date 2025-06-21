@@ -1,10 +1,12 @@
 use std::sync::atomic::{AtomicU8, Ordering};
 
+#[derive(Debug)]
 pub(crate) enum EntryPointer {
     MainQueue(usize),
     SmallQueue(usize),
 }
 
+#[derive(Debug)]
 pub(crate) struct Entry<K, V> {
     pub(crate) key: K,
     pub(crate) value: V,

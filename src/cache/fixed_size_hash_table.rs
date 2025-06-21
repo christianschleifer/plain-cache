@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::cmp;
 use std::hash::{BuildHasher, Hash};
 
+#[derive(Debug)]
 pub(crate) struct FixedSizeHashTable<T, S = RandomState> {
     hash_builder: S,
     buckets: Vec<Option<T>>,
