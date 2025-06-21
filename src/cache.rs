@@ -237,9 +237,7 @@ mod tests {
             let key = format!("key{}", i);
             let value = format!("value{}", i);
             let handle = thread::spawn(move || {
-                // Insert value
                 cache_clone.insert(key.clone(), value.clone());
-                // Read value
                 assert_eq!(cache_clone.get(&key), Some(value));
             });
             handles.push(handle);
