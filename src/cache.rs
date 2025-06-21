@@ -1,14 +1,17 @@
-use parking_lot::RwLock;
+use crate::Stats;
+use parking_lot::{Mutex, RwLock};
 use shard::Shard;
 use std::borrow::Borrow;
 use std::hash::{BuildHasher, Hash};
 use std::num::NonZero;
+use std::time::Instant;
 use std::{cmp, thread};
 
 mod entry;
 mod fixed_size_hash_table;
 mod ring_buffer;
 mod shard;
+pub(crate) mod stats;
 
 pub(crate) type RandomState = ahash::RandomState;
 
@@ -25,6 +28,7 @@ pub(crate) type RandomState = ahash::RandomState;
 pub struct Cache<K, V, S = RandomState> {
     hash_builder: S,
     shards: Vec<RwLock<Shard<K, V, S>>>,
+    metrics_last_accessed: Mutex<Instant>,
 }
 
 impl<K, V> Cache<K, V, RandomState>
@@ -100,10 +104,13 @@ where
 
         let mut shards = Vec::with_capacity(number_of_shards);
 
+        let metrics_last_accessed = Mutex::new(Instant::now());
+
         if number_of_shards == 0 {
             return Self {
                 hash_builder,
                 shards,
+                metrics_last_accessed,
             };
         }
 
@@ -117,7 +124,33 @@ where
         Self {
             hash_builder,
             shards,
+            metrics_last_accessed,
         }
+    }
+}
+
+impl<K, V, S> Cache<K, V, S> {
+    pub fn stats(&self) -> Stats {
+        let mut stats = Stats::default();
+
+        let millis_elapsed = {
+            let mut guard = self.metrics_last_accessed.lock();
+            let millis_elapsed = guard.elapsed().as_millis();
+            *guard = Instant::now();
+            millis_elapsed
+        };
+
+        stats.millis_elapsed = millis_elapsed;
+
+        for shard in &self.shards {
+            let shard = shard.read();
+            stats.hit_count += shard.hit_count();
+            stats.miss_count += shard.miss_count();
+            stats.eviction_count += shard.eviction_count();
+            shard.reset_counters();
+        }
+
+        stats
     }
 }
 

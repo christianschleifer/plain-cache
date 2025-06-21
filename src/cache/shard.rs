@@ -2,6 +2,7 @@ use crate::cache::RandomState;
 use crate::cache::entry::{Entry, EntryPointer};
 use crate::cache::fixed_size_hash_table::FixedSizeHashTable;
 use crate::cache::ring_buffer::RingBuffer;
+use crate::cache::stats::Counters;
 use std::borrow::Borrow;
 use std::cmp;
 use std::collections::HashMap;
@@ -13,6 +14,7 @@ pub(crate) struct Shard<K, V, S = RandomState> {
     small_queue: RingBuffer<Entry<K, V>>,
     main_queue: RingBuffer<Entry<K, V>>,
     ghost_queue: FixedSizeHashTable<K, S>,
+    counters: Counters,
 }
 
 impl<K, V, S> Shard<K, V, S>
@@ -34,6 +36,7 @@ where
                 main_fifo_queue_size,
                 hash_builder,
             ),
+            counters: Counters::default(),
         }
     }
 }
@@ -97,6 +100,7 @@ where
                     continue;
                 } else {
                     self.entry_pointers.remove(&entry.key);
+                    self.counters.increment_eviction_count();
                     return;
                 }
             }
@@ -148,6 +152,7 @@ where
                 // remove the entry and add the key to the ghost queue
 
                 self.entry_pointers.remove(&entry.key);
+                self.counters.increment_eviction_count();
                 self.ghost_queue.insert(entry.key);
             };
         }
@@ -174,7 +179,13 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        match self.entry_pointers.get(key)? {
+        let Some(entry_pointer) = self.entry_pointers.get(key) else {
+            self.counters.increment_miss_count();
+            return None;
+        };
+
+        self.counters.increment_hit_count();
+        match entry_pointer {
             EntryPointer::MainQueue(index) => {
                 let entry = self
                     .main_queue
@@ -202,5 +213,23 @@ where
         }
 
         entry.increment_num_accessed(current_val);
+    }
+}
+
+impl<K, V, S> Shard<K, V, S> {
+    pub(crate) fn hit_count(&self) -> u64 {
+        self.counters.hit_count()
+    }
+
+    pub(crate) fn miss_count(&self) -> u64 {
+        self.counters.miss_count()
+    }
+
+    pub(crate) fn eviction_count(&self) -> u64 {
+        self.counters.eviction_count()
+    }
+
+    pub(crate) fn reset_counters(&self) {
+        self.counters.reset()
     }
 }
