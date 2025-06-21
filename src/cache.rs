@@ -272,4 +272,34 @@ mod tests {
         // then
         assert_eq!(cache.get("key1"), None);
     }
+
+    #[test]
+    fn it_returns_and_resets_stats() {
+        // given
+        let cache = Cache::with_capacity(1_000);
+
+        // when
+        for i in 0..10 {
+            cache.insert(i, i);
+        }
+
+        // 5 hits
+        for i in 0..5 {
+            cache.get(&i);
+        }
+
+        // 5 misses
+        for i in 10..15 {
+            cache.get(&i);
+        }
+
+        // then
+        let stats = cache.stats();
+        assert_eq!(stats.hit_count, 5);
+        assert_eq!(stats.miss_count, 5);
+
+        let stats = cache.stats();
+        assert_eq!(stats.hit_count, 0);
+        assert_eq!(stats.miss_count, 0);
+    }
 }
