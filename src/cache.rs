@@ -155,7 +155,9 @@ impl<K, V, S> Cache<K, V, S> {
     /// use plain_cache::Cache;
     ///
     /// let cache = Cache::with_capacity(100);
-    /// // ... perform cache operations ...
+    /// cache.insert("key1", "value1");
+    /// cache.get("key1"); // hit
+    /// cache.get("key2"); // miss
     ///
     /// let stats = cache.stats();
     /// let total_requests = stats.hit_count + stats.miss_count;
