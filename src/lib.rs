@@ -70,6 +70,31 @@
 //! assert_eq!(cache.get("key1"), Some("value1"));
 //! assert_eq!(cache.get("key2"), Some("value2"));
 //! ```
+//!
+//! Monitoring cache performance with statistics:
+//!
+//! ```rust
+//! use plain_cache::Cache;
+//!
+//! let cache = Cache::with_capacity(100);
+//!
+//! // Perform some cache operations
+//! cache.insert("key1", "value1");
+//! cache.get("key1"); // hit
+//! cache.get("key2"); // miss
+//!
+//! // Get statistics (counters are reset after each call)
+//! let stats = cache.stats();
+//! println!("Hits: {}, Misses: {}, Evictions: {}, Time elapsed: {}ms",
+//!          stats.hit_count, stats.miss_count, stats.eviction_count, stats.millis_elapsed);
+//!
+//! // Calculate hit rate
+//! let total_requests = stats.hit_count + stats.miss_count;
+//! if total_requests > 0 {
+//!     let hit_rate = stats.hit_count as f64 / total_requests as f64;
+//!     println!("Hit rate: {:.2}%", hit_rate * 100.0);
+//! }
+//! ```
 
 #![forbid(unsafe_code)]
 pub mod cache;

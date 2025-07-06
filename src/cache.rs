@@ -130,6 +130,46 @@ where
 }
 
 impl<K, V, S> Cache<K, V, S> {
+    /// Returns cache performance statistics and resets the internal counters.
+    ///
+    /// This method provides metrics about cache performance since the last call to `stats()`.
+    /// After returning the statistics, all internal counters are reset to zero.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    /// ```
+    /// use plain_cache::Cache;
+    ///
+    /// let cache = Cache::with_capacity(100);
+    /// cache.insert("key1", "value1");
+    /// cache.get("key1"); // hit
+    /// cache.get("key2"); // miss
+    ///
+    /// let stats = cache.stats();
+    /// println!("Hits: {}, Misses: {}", stats.hit_count, stats.miss_count);
+    /// ```
+    ///
+    /// Calculating hit rate:
+    /// ```
+    /// use plain_cache::Cache;
+    ///
+    /// let cache = Cache::with_capacity(100);
+    /// // ... perform cache operations ...
+    ///
+    /// let stats = cache.stats();
+    /// let total_requests = stats.hit_count + stats.miss_count;
+    /// if total_requests > 0 {
+    ///     let hit_rate = stats.hit_count as f64 / total_requests as f64;
+    ///     println!("Hit rate: {:.2}%", hit_rate * 100.0);
+    /// }
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// The counters are reset after each call to `stats()`, so each call returns
+    /// statistics for the period since the previous call. This allows for periodic
+    /// monitoring of cache performance.
     pub fn stats(&self) -> Stats {
         let mut stats = Stats::default();
 
