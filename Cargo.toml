@@ -4,8 +4,12 @@ version = "0.2.0"
 edition = "2024"
 authors = ["Christian Schleifer <chr.schleifer@gmail.com>"]
 description = "Highly performant thread-safe cache with a focus on simplicity"
+repository = "https://github.com/christianschleifer/plain-cache"
+documentation = "https://docs.rs/plain-cache"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
+keywords = ["cache", "s3-fifo", "concurrent", "performance", "fifo"]
+categories = ["caching", "concurrency", "data-structures"]
 
 [dependencies]
 ahash = "0.8"
