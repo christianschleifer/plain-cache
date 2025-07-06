@@ -9,7 +9,27 @@
 `plain-cache` is a high-performance, thread-safe cache implementation that makes no use of unsafe
 Rust code. It implements the S3-FIFO eviction
 algorithm [[see](https://dl.acm.org/doi/pdf/10.1145/3600006.3613147)]. `plain-cache` allocates
-it's capacity at cache instantiation time.
+its capacity at cache instantiation time and is designed for high-throughput scenarios with minimal
+contention.
+
+## Key Features
+
+- **S3-FIFO eviction**: Optimal cache performance with predictable behavior
+- **Sharded design**: Reduces lock contention for concurrent access
+- **Built-in metrics**: Track hits, misses, evictions, and timing
+- **Custom hashing**: Support for different hash functions
+- **Memory pre-allocation**: Fixed capacity allocated at creation time
+- **API simplicity**: Straightforward get/insert interface
+
+## Quick Start
+
+```rust
+use plain_cache::Cache;
+
+let cache = Cache::with_capacity(1000);
+cache.insert("key", "value");
+assert_eq!(cache.get("key"), Some("value"));
+```
 
 ## Use if you need
 
@@ -27,5 +47,8 @@ it's capacity at cache instantiation time.
 * Zero-sized types
 * Lifecycle hooks
 * Item weighing
+* Custom eviction policies
 * Time-based eviction
 * Explicit cache deletions
+* Memory-based capacity limits
+* Cache warming strategies
